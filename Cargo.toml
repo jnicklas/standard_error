@@ -1,0 +1,5 @@
+[package]
+
+name = "standard_error"
+version = "0.0.1"
+authors = ["Jonas Nicklas <jonas.nicklas@gmail.com>"]
