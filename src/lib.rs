@@ -59,17 +59,6 @@ impl Show for StandardError {
 
 type AResult<T> = Result<T, StandardError>;
 
-fn cool(a: int) -> AResult<String> {
-  match a {
-    0 => Ok(a.to_string()),
-    1 => Ok(try!(File::open(&Path::new("README.md")).read_to_end()).into_ascii().into_string()),
-    2 => Ok(try!(File::open(&Path::new("message.txt")).read_to_end()).into_ascii().into_string()),
-    3 => fail!("it died!"),
-    _ => Err(StandardErrorActual { description: "tis bad" })
-  }
-}
-
-
 #[cfg(test)]
 mod test {
   use std::io::File;
@@ -85,6 +74,10 @@ mod test {
     Ok(string)
   }
 
+  fn fail() -> AResult<String> {
+    fail!("OMG!")
+  }
+
   #[test]
   fn test_success() {
     assert_eq!("Hello", success().unwrap().as_slice());
@@ -95,7 +88,18 @@ mod test {
     let result = read_file(&Path::new("./Hello"));
     match result {
       Ok(_) => panic!("should fail!"),
-      Err(err) => assert_eq!(err.description(), "couldn't open file")
+      Err(err) => {
+        assert_eq!(err.description(), "couldn't open file");
+      }
+    }
+  }
+
+  #[test]
+  fn test_fail_macro_error() {
+    let result = fail();
+    match result {
+      Ok(_) => panic!("should fail!"),
+      Err(err) => assert_eq!(err.description(), "OMG!")
     }
   }
 }
