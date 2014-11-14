@@ -4,12 +4,8 @@
 use std::error::{Error, FromError};
 use std::fmt::{Show, Formatter, FormatError};
 
-#[macro_export]
-macro_rules! fail {
-  ($expr:expr) => (
-    return Err(::std::error::FromError::from_error($expr));
-  )
-}
+#[macro_escape]
+mod macros;
 
 pub enum StandardError {
   StandardErrorActual { description: &'static str },
@@ -17,21 +13,21 @@ pub enum StandardError {
 }
 
 impl StandardError {
-  fn description(&self) -> &str {
+  pub fn description(&self) -> &str {
     match *self {
       StandardErrorActual { description } => description,
       StandardErrorWrapped(ref err) => err.description()
     }
   }
 
-  fn detail(&self) -> Option<String> {
+  pub fn detail(&self) -> Option<String> {
     match *self {
       StandardErrorActual { description: _ } => None,
       StandardErrorWrapped(ref err) => err.detail()
     }
   }
 
-  fn cause(&self) -> Option<&Error> {
+  pub fn cause(&self) -> Option<&Error> {
     match *self {
       StandardErrorActual { description: _ } => None,
       StandardErrorWrapped(ref err) => err.cause()
@@ -57,24 +53,24 @@ impl Show for StandardError {
   }
 }
 
-pub type AResult<T> = Result<T, StandardError>;
+pub type StandardResult<T> = Result<T, StandardError>;
 
 #[cfg(test)]
 mod test {
   use std::io::File;
-  use super::{AResult};
+  use super::{StandardResult};
 
-  fn success() -> AResult<String> {
+  fn success() -> StandardResult<String> {
     Ok("Hello".to_string())
   }
 
-  fn read_file(path: &Path) -> AResult<String> {
+  fn read_file(path: &Path) -> StandardResult<String> {
     let buffer = try!(File::open(path).read_to_end());
     let string = buffer.into_ascii().into_string();
     Ok(string)
   }
 
-  fn fail() -> AResult<String> {
+  fn fail() -> StandardResult<String> {
     fail!("OMG!")
   }
 
