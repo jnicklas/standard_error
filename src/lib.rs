@@ -3,15 +3,15 @@
 
 use std::error::{Error, FromError};
 use std::fmt::{Show, Formatter, FormatError};
-use std::io::{File};
 
+#[macro_export]
 macro_rules! fail {
   ($expr:expr) => (
     return Err(::std::error::FromError::from_error($expr));
   )
 }
 
-enum StandardError {
+pub enum StandardError {
   StandardErrorActual { description: &'static str },
   StandardErrorWrapped(Box<Error+Send+'static>)
 }
@@ -57,7 +57,7 @@ impl Show for StandardError {
   }
 }
 
-type AResult<T> = Result<T, StandardError>;
+pub type AResult<T> = Result<T, StandardError>;
 
 #[cfg(test)]
 mod test {
@@ -90,6 +90,7 @@ mod test {
       Ok(_) => panic!("should fail!"),
       Err(err) => {
         assert_eq!(err.description(), "couldn't open file");
+        assert!(err.detail().unwrap().as_slice().contains("no such file or directory"))
       }
     }
   }
