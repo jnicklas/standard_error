@@ -66,8 +66,8 @@ mod test {
 
   fn read_file(path: &Path) -> StandardResult<String> {
     let buffer = try!(File::open(path).read_to_end());
-    let string = buffer.into_ascii().into_string();
-    Ok(string)
+    let result = try!(String::from_utf8(buffer), "cannot read binary file");
+    Ok(result)
   }
 
   fn fail() -> StandardResult<String> {
@@ -88,6 +88,15 @@ mod test {
         assert_eq!(err.description(), "couldn't open file");
         assert!(err.detail().unwrap().as_slice().contains("no such file or directory"))
       }
+    }
+  }
+
+  #[test]
+  fn test_try_with_message() {
+    let result = read_file(&Path::new("./binary_file"));
+    match result {
+      Ok(_) => panic!("should fail!"),
+      Err(err) => assert_eq!(err.description(), "cannot read binary file")
     }
   }
 
