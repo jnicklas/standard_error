@@ -70,12 +70,18 @@ mod test {
     Ok(result)
   }
 
+  fn read_file_with_format(path: &Path) -> StandardResult<String> {
+    let buffer = try!(File::open(path).read_to_end(), format!("cannot read file {} as path", path.as_str().unwrap()));
+    let result = try!(String::from_utf8(buffer), "cannot read binary file");
+    Ok(result)
+  }
+
   fn fail() -> StandardResult<String> {
     fail!("OMG!")
   }
 
   fn fail_with_format(what: &str) -> StandardResult<String> {
-    fail!("OMG! {}", what)
+    fail!(format!("OMG! {}", what))
   }
 
   #[test]
@@ -100,6 +106,15 @@ mod test {
     match result {
       Ok(_) => panic!("should fail!"),
       Err(err) => assert_eq!(err.description(), "cannot read binary file")
+    }
+  }
+
+  #[test]
+  fn test_try_with_format() {
+    let result = read_file_with_format(&Path::new("./Hello"));
+    match result {
+      Ok(_) => panic!("should fail!"),
+      Err(err) => assert_eq!(err.description(), "cannot read file Hello as path")
     }
   }
 

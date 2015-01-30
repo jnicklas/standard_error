@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! fail {
-  ($($arg:tt)*) => (
-    return Err(::std::error::FromError::from_error(format!($($arg)*)));
+  ($expr:expr) => (
+    return Err(::std::error::FromError::from_error($expr));
   )
 }
 
