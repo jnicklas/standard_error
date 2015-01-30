@@ -1,55 +1,46 @@
-#![feature(struct_variant)]
-#![feature(macro_rules)]
+#![feature(core)]
 
 use std::error::{Error, FromError};
-use std::fmt::{Show, Formatter, FormatError};
 
-#[macro_escape]
+#[macro_use]
 mod macros;
 
 pub enum StandardError {
-  StandardErrorActual { description: &'static str },
-  StandardErrorWrapped(Box<Error+Send+'static>)
+  Actual { description: &'static str },
+  Wrapped(Box<Error+'static>)
 }
 
 impl StandardError {
   pub fn description(&self) -> &str {
     match *self {
-      StandardErrorActual { description } => description,
-      StandardErrorWrapped(ref err) => err.description()
-    }
-  }
-
-  pub fn detail(&self) -> Option<String> {
-    match *self {
-      StandardErrorActual { description: _ } => None,
-      StandardErrorWrapped(ref err) => err.detail()
+      StandardError::Actual { description } => description,
+      StandardError::Wrapped(ref err) => err.description()
     }
   }
 
   pub fn cause(&self) -> Option<&Error> {
     match *self {
-      StandardErrorActual { description: _ } => None,
-      StandardErrorWrapped(ref err) => err.cause()
+      StandardError::Actual { description: _ } => None,
+      StandardError::Wrapped(ref err) => err.cause()
     }
   }
 }
 
-impl<T> FromError<T> for StandardError where T: Error {
+impl<T> FromError<T> for StandardError where T: Error+'static {
   fn from_error(err: T) -> StandardError {
-    StandardErrorWrapped(box err)
+    StandardError::Wrapped(Box::new(err))
   }
 }
 
 impl FromError<&'static str> for StandardError {
   fn from_error(err: &'static str) -> StandardError {
-    StandardErrorActual { description: err }
+    StandardError::Actual { description: err }
   }
 }
 
-impl Show for StandardError {
-  fn fmt(&self, formatter: &mut Formatter) -> Result<(), FormatError> {
-    formatter.write(self.description().as_bytes())
+impl std::fmt::Debug for StandardError {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    formatter.write_str(self.description())
   }
 }
 
@@ -57,7 +48,8 @@ pub type StandardResult<T> = Result<T, StandardError>;
 
 #[cfg(test)]
 mod test {
-  use std::io::File;
+
+  use std::old_io::File;
   use super::{StandardResult};
 
   fn success() -> StandardResult<String> {
@@ -85,8 +77,7 @@ mod test {
     match result {
       Ok(_) => panic!("should fail!"),
       Err(err) => {
-        assert_eq!(err.description(), "couldn't open file");
-        assert!(err.detail().unwrap().as_slice().contains("no such file or directory"))
+        assert_eq!(err.description(), "couldn't open path as file");
       }
     }
   }

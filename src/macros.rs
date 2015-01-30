@@ -6,7 +6,7 @@ macro_rules! fail {
 }
 
 #[macro_export]
-macro_rules! try (
+macro_rules! try {
     ($expr:expr) => ({
         match $expr {
             Ok(val) => val,
@@ -20,4 +20,4 @@ macro_rules! try (
             Err(_) => return Err(::std::error::FromError::from_error($err))
         }
     });
-)
+}
