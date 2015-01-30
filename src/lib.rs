@@ -3,26 +3,34 @@
 use std::error::{Error, FromError};
 
 #[macro_use]
-mod macros;
+pub mod macros;
 
 pub enum StandardError {
-  Actual { description: &'static str },
+  Static(&'static str),
+  Dynamic(String),
   Wrapped(Box<Error+'static>)
 }
 
 impl StandardError {
   pub fn description(&self) -> &str {
     match *self {
-      StandardError::Actual { description } => description,
+      StandardError::Static(description) => description,
+      StandardError::Dynamic(ref description) => &description[],
       StandardError::Wrapped(ref err) => err.description()
     }
   }
 
   pub fn cause(&self) -> Option<&Error> {
     match *self {
-      StandardError::Actual { description: _ } => None,
-      StandardError::Wrapped(ref err) => err.cause()
+      StandardError::Wrapped(ref err) => err.cause(),
+      _ => None
     }
+  }
+}
+
+impl FromError<String> for StandardError {
+  fn from_error(err: String) -> StandardError {
+    StandardError::Dynamic(err)
   }
 }
 
@@ -34,7 +42,7 @@ impl<T> FromError<T> for StandardError where T: Error+'static {
 
 impl FromError<&'static str> for StandardError {
   fn from_error(err: &'static str) -> StandardError {
-    StandardError::Actual { description: err }
+    StandardError::Static(err)
   }
 }
 
@@ -64,6 +72,10 @@ mod test {
 
   fn fail() -> StandardResult<String> {
     fail!("OMG!")
+  }
+
+  fn fail_with_format(what: &str) -> StandardResult<String> {
+    fail!("OMG! {}", what)
   }
 
   #[test]
@@ -97,6 +109,15 @@ mod test {
     match result {
       Ok(_) => panic!("should fail!"),
       Err(err) => assert_eq!(err.description(), "OMG!")
+    }
+  }
+
+  #[test]
+  fn test_fail_macro_error_with_format() {
+    let result = fail_with_format("woop");
+    match result {
+      Ok(_) => panic!("should fail!"),
+      Err(err) => assert_eq!(err.description(), "OMG! woop")
     }
   }
 }
